@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRancho } from '../../../context/RanchoContext';
 import { Core } from '../../../interfaces/CoreInterfaces';
+import { formStyleBase } from '../formStyles';
 
 interface AnimalMoveFormComponentProps {
   animal: Core.Animal;
@@ -246,23 +247,7 @@ export default function AnimalMoveFormComponent({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 13,
-    lineHeight: 18,
-  },
+  ...formStyleBase,
   animalSummaryCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,

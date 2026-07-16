@@ -2,6 +2,7 @@ import { apiClient } from '../../lib/apiClient';
 import { Auth } from '../../interfaces/AuthInterfaces';
 import { AxiosResponse } from 'axios';  
 import { withLoader } from '../../context/LoaderContext';
+import { supabase } from '../../lib/supabase';
 
 // Helper to simulate network delay
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -46,7 +47,7 @@ export const authService = {
     withLoader(() => apiClient.post('/auth/login', { phone, password })),
 
   me: (): Promise<AxiosResponse<any>> =>
-    withLoader(() => apiClient.get('/auth/me')),
+    withLoader(() => apiClient.get('/me')),
 
   signIn: (email: string, display_name: string, first_name: string, paternal_last_name_string: string, maternal_last_name: string, phone: string, status: Auth.ProfileStatus): Promise<AxiosResponse<Auth.SignInInterface>> =>
     withLoader(async () => {

@@ -58,7 +58,16 @@ if (USE_MOCK) {
   // Pre-load session eagerly
   loadSession();
 
+  // Store the real API token so signInWithPassword can use it
+  // instead of generating a fake mock token.
+  let _realApiToken = null;
+
   const mockAuth = {
+    // Called after passwordLogin to store the real JWT from the API
+    setRealToken(token) {
+      _realApiToken = token;
+    },
+
     async getSession() {
       const session = await loadSession();
       return { data: { session }, error: null };
@@ -85,10 +94,13 @@ if (USE_MOCK) {
       };
     },
 
-    async signInWithPassword({ phone, password }) {
-      console.log('[Supabase Mock] signInWithPassword called', { phone });
+    async signInWithPassword({ phone, password, orgId }) {
+      console.log('[Supabase Mock] signInWithPassword called', { phone, orgId });
+      const activeOrgId = orgId || 'org_amanecer';
+      // Use the real API token if available; fall back to mock only when no real token exists
+      const tokenToUse = _realApiToken || `mock-jwt-token-sprint2-${activeOrgId}`;
       const session = {
-        access_token: 'mock-jwt-token-sprint2',
+        access_token: tokenToUse,
         token_type: 'bearer',
         expires_in: 3600,
         refresh_token: 'mock-refresh-token',
@@ -99,11 +111,19 @@ if (USE_MOCK) {
           user_metadata: {
             first_name: 'Administrador',
             last_name: 'Demo',
+            active_org_id: activeOrgId,
           },
         },
       };
       await saveSession(session);
       listeners.forEach((cb) => cb('SIGNED_IN', session));
+      return { data: { session }, error: null };
+    },
+
+    async updateSession(session) {
+      console.log('[Supabase Mock] updateSession called', session);
+      await saveSession(session);
+      listeners.forEach((cb) => cb('USER_UPDATED', session));
       return { data: { session }, error: null };
     },
 

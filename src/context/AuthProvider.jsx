@@ -33,7 +33,10 @@ export default function AuthProvider({ children }) {
 
   const value = {
     session,
-    user: session?.user ?? null,
+    user: session?.user ? {
+      ...session.user,
+      first_name: session.user.user_metadata?.first_name || session.user.email || 'Usuario',
+    } : null,
     isLoading,
   };
 

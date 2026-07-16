@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Animated,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { loginFormStyles } from './loginFormStyles';
@@ -18,6 +19,8 @@ import {
 import { maskPhone } from '../../../utils/phoneUtils';
 import { getStrengthLabelAndColor } from '../../../utils/passwordUtils';
 import { sanitizeOtpInput } from '../../../utils/validationUtils';
+import PrimaryButton from "../../UI/buttons/primaryButton";
+import SecondaryButton from "../../UI/buttons/secondaryButton";
 
 interface LoginFormComponentProps {
   onSubmit: (data: Auth.LogInInterface) => Promise<void> | void;
@@ -76,6 +79,11 @@ export default function LoginFormComponent({ onSubmit, onToggleForm }: LoginForm
     clearOtpError,
     clearNewPasswordError,
     clearConfirmPasswordError,
+    orgName,
+    setOrgName,
+    orgNameError,
+    handleCreateOrgSubmit,
+    clearOrgNameError,
   } = useLoginFormLogic({ onSubmit });
 
   const renderBackLink = () => {
@@ -610,47 +618,90 @@ export default function LoginFormComponent({ onSubmit, onToggleForm }: LoginForm
                 : 'Toca el rancho con el que quieres trabajar. Puedes cambiarlo cuando quieras.'}
             </Text>
 
-            {organizations.map((org) => {
-              const isSelected = selectedOrg === org.org_id;
-              return (
-                <TouchableOpacity
-                  key={org.org_id}
-                  style={[
-                    loginFormStyles.supportCard,
-                    isSelected && loginFormStyles.supportCardSelected,
-                  ]}
-                  onPress={() => setSelectedOrg(org.org_id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={loginFormStyles.supportCardContent}>
-                    <Text style={loginFormStyles.supportCardTitle}>{org.org_name}</Text>
-                    <Text style={loginFormStyles.supportCardSubtitle}>{org.role}</Text>
-                  </View>
-                  {isSelected ? (
-                    <Ionicons name="checkmark-circle" size={22} color={theme.colors.brightFern} />
-                  ) : (
-                    <Ionicons name="ellipse-outline" size={22} color="rgba(255,255,255,0.3)" />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+              {organizations.map((org) => {
+                const isSelected = selectedOrg === org.org_id;
+                return (
+                  <TouchableOpacity
+                    key={org.org_id}
+                    style={[
+                      loginFormStyles.supportCard,
+                      isSelected && loginFormStyles.supportCardSelected,
+                    ]}
+                    onPress={() => setSelectedOrg(org.org_id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={loginFormStyles.supportCardContent}>
+                      <Text style={loginFormStyles.supportCardTitle}>{org.org_name}</Text>
+                      <Text style={loginFormStyles.supportCardSubtitle}>{org.role}</Text>
+                    </View>
+                    {isSelected ? (
+                      <Ionicons name="checkmark-circle" size={22} color={theme.colors.brightFern} />
+                    ) : (
+                      <Ionicons name="ellipse-outline" size={22} color="rgba(255,255,255,0.3)" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <PrimaryButton
+              text="Entrar"
+              onPress={handleOrgSubmit}
+              loading={loading}
+              disabled={appLoading || organizations.length === 0}
+            />
+            <SecondaryButton text="+ Registrar un nuevo rancho" onPress={() => transitionToPage(7)} />
+          </>
+        );
+
+      case 7: // P8: Create organization
+        return (
+          <>
+            <Text style={loginFormStyles.title}>Registrar tu rancho</Text>
+            {renderBackLink()}
+            <Text style={loginFormStyles.subtitle}>
+              Ingresa el nombre de tu nuevo rancho o empresa ganadera para comenzar a gestionarlo.
+            </Text>
+
+            <View style={loginFormStyles.inputGroup}>
+              <Text style={loginFormStyles.inputLabel}>Nombre del rancho</Text>
+              <View style={[loginFormStyles.inputWrapper, orgNameError && loginFormStyles.inputWrapperError]}>
+                <Ionicons
+                  name="business-outline"
+                  size={20}
+                  color={orgNameError ? theme.colors.error : "rgba(255, 255, 255, 0.6)"}
+                  style={loginFormStyles.inputIcon}
+                />
+                <TextInput
+                  style={[loginFormStyles.inputText, { color: '#ffffff' }]}
+                  placeholder="Ej. Rancho El Limonal"
+                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  value={orgName}
+                  onChangeText={(text) => {
+                    setOrgName(text);
+                    clearOrgNameError();
+                  }}
+                />
+              </View>
+              {orgNameError ? (
+                <Text style={loginFormStyles.errorText}>{orgNameError}</Text>
+              ) : null}
+            </View>
 
             <TouchableOpacity
-              style={[
-                loginFormStyles.submitButton,
-                (loading || appLoading || organizations.length === 0) && { opacity: 0.7 }
-              ]}
-              onPress={handleOrgSubmit}
+              style={[loginFormStyles.submitButton, loading && { opacity: 0.7 }]}
+              onPress={handleCreateOrgSubmit}
               activeOpacity={0.8}
-              disabled={loading || appLoading || organizations.length === 0}
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
                 <>
-                  <Text style={loginFormStyles.submitButtonText}>Entrar</Text>
+                  <Text style={loginFormStyles.submitButtonText}>Registrar rancho</Text>
                   <Ionicons
-                    name="arrow-forward"
+                    name="checkmark"
                     size={20}
                     color="#ffffff"
                     style={loginFormStyles.buttonArrow}

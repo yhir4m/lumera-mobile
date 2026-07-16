@@ -7,11 +7,13 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
-  ScrollView,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRancho } from '../../../context/RanchoContext';
-import { Core } from '../../../interfaces/CoreInterfaces';
+import { coreService } from '../../../services/CoreServices/CoreService';
+import { formStyleBase } from '../formStyles';
+import DatePicker from '../../UI/DatePicker/DatePicker';
 
 interface AnimalCreateFormComponentProps {
   onSuccess?: () => void;
@@ -25,52 +27,60 @@ export default function AnimalCreateFormComponent({
   const { selectedOrgId, selectedProductionUnitId, setAnimals } = useRancho();
 
   // Form states
-  const [nombre, setNombre] = useState<string>('');
-  const [edad, setEdad] = useState<string>('');
-  const [fechaNacimiento, setFechaNacimiento] = useState<string>('');
-  const [animalType, setAnimalType] = useState<string>('VACA');
-  const [customType, setCustomType] = useState<string>('');
-  const [color, setColor] = useState<string>('');
-  const [arete, setArete] = useState<string>('');
-  const [pierna1, setPierna1] = useState<string>('');
-  const [pieran2, setPieran2] = useState<string>('');
-  const [serie1, setSerie1] = useState<string>('');
-  const [serie2, setSerie2] = useState<string>('');
+  const [identifier, setIdentifier] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
+  const [name, setName] = useState<string>('');
+  const [tagNumber, setTagNumber] = useState<string>('');
+  const [siniigaTag, setSiniigaTag] = useState<string>('');
+  const [birthDate, setBirthDate] = useState<string>('');
+  const [sex, setSex] = useState<'male' | 'female' | 'unknown'>('unknown');
+  const [origin, setOrigin] = useState<'born' | 'purchased' | 'transferred' | 'imported' | 'unknown'>('unknown');
+  const [ownershipType, setOwnershipType] = useState<string>('');
+  const [purpose, setPurpose] = useState<string>('');
+  const [purity, setPurity] = useState<string>('');
+  const [sireId, setSireId] = useState<string>('');
+  const [damId, setDamId] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
 
   // UI states
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!identifier.trim()) {
+      Alert.alert('Error', 'El Identificador es requerido.');
+      return;
+    }
     setLoading(true);
     try {
-      const finalType = animalType === 'OTRO' ? (customType.trim() || 'VACA') : animalType;
-
-      const newAnimal: Core.Animal = {
-        id: Math.floor(Math.random() * 1000000),
-        nombre: nombre.trim() || 'Sin nombre',
-        edad: edad.trim() ? parseInt(edad) : 0,
-        fechaNacimiento: fechaNacimiento.trim() || new Date().toISOString().split('T')[0],
-        animalType: finalType,
-        Color: color.trim() || 'No especificado',
-        Pierna1: pierna1.trim() || 'No especificado',
-        Pieran2: pieran2.trim() || 'No especificado',
-        Serie1: serie1.trim() || 'No especificado',
-        Serie2: serie2.trim() || 'No especificado',
-        Arete: arete.trim() || 'No especificado',
-        created_by: 'mock-user-id',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const payload = {
+        identifier: identifier.trim(),
+        display_name: displayName.trim() || null,
+        name: name.trim() || null,
+        tag_number: tagNumber.trim() || null,
+        siniiga_tag: siniigaTag.trim() || null,
+        birth_date: birthDate.trim() || null,
+        sex: sex,
+        origin: origin,
+        ownership_type: ownershipType.trim() || null,
+        purpose: purpose.trim() || null,
+        purity: purity.trim() || null,
+        sire_id: sireId.trim() || null,
+        dam_id: damId.trim() || null,
+        notes: notes.trim() || null,
       };
 
-      // Pushing the mock animal into current context list
-      setAnimals((prev) => [...prev, newAnimal]);
+      const response = await coreService.createAnimal(selectedOrgId, selectedProductionUnitId, payload);
+      const createdAnimal = response.data;
+
+      // Pushing the real animal into current context list
+      setAnimals((prev) => [...prev, createdAnimal]);
 
       Alert.alert('Éxito', 'El animal ha sido registrado correctamente.');
       if (onSuccess) {
         onSuccess();
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Ocurrió un error al registrar el animal.');
+      Alert.alert('Error', err.response?.data?.detail || err.message || 'Ocurrió un error al registrar el animal.');
     } finally {
       setLoading(false);
     }
@@ -83,185 +93,247 @@ export default function AnimalCreateFormComponent({
         <Text style={styles.subtitle}>Complete los datos del animal para registrarlo en la unidad productiva.</Text>
       </View>
 
-      {/* Name Input */}
+      {/* Identifier Input (Required) */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Nombre (Opcional)</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons name="text-outline" size={20} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+        <Text style={styles.inputLabel}>Identificador (Requerido)</Text>
+        <View style={[styles.inputWrapper, { borderColor: '#d9ab55' }]}>
+          <Ionicons name="key-outline" size={20} color="#d9ab55" style={styles.inputIcon} />
           <TextInput
             style={styles.inputText}
-            value={nombre}
-            onChangeText={setNombre}
-            placeholder="Ej. Tilín"
-            placeholderTextColor="rgba(255,255,255,0.3)"
-          />
-        </View>
-      </View>
-
-      {/* Row for Edad and Fecha de Nacimiento */}
-      <View style={styles.inputRowContainer}>
-        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-          <Text style={styles.inputLabel}>Edad (Opcional)</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="time-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputText}
-              value={edad}
-              onChangeText={setEdad}
-              placeholder="Ej. 2"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-          <Text style={styles.inputLabel}>Fecha Nacimiento (Opcional)</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="calendar-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputText}
-              value={fechaNacimiento}
-              onChangeText={setFechaNacimiento}
-              placeholder="AAAA-MM-DD"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* Animal Type Selector */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Tipo de Animal (Opcional)</Text>
-        <View style={styles.typeSelectorRow}>
-          {['VACA', 'BECERRO', 'TORO', 'OTRO'].map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.typeButton,
-                animalType === type && styles.typeButtonActive,
-              ]}
-              onPress={() => setAnimalType(type)}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.typeButtonText,
-                animalType === type && styles.typeButtonTextActive
-              ]}>
-                {type}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Custom Type Input */}
-      {animalType === 'OTRO' && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Especificar Tipo (Opcional)</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="create-outline" size={20} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputText}
-              value={customType}
-              onChangeText={setCustomType}
-              placeholder="Ej. Vaquilla, Novillo, etc."
-              placeholderTextColor="rgba(255,255,255,0.3)"
-            />
-          </View>
-        </View>
-      )}
-
-      {/* Arete Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Arete (Opcional)</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons name="pricetag-outline" size={20} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
-          <TextInput
-            style={styles.inputText}
-            value={arete}
-            onChangeText={setArete}
-            placeholder="Ej. TAG-MX-123"
+            value={identifier}
+            onChangeText={setIdentifier}
+            placeholder="Ej. ARETE-100"
             placeholderTextColor="rgba(255,255,255,0.3)"
             autoCapitalize="characters"
           />
         </View>
       </View>
 
-      {/* Color Input */}
+      {/* Name & Display Name Row */}
+      <View style={styles.inputRowContainer}>
+        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+          <Text style={styles.inputLabel}>Nombre</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="text-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputText}
+              value={name}
+              onChangeText={setName}
+              placeholder="Ej. Tilín"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        </View>
+
+        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+          <Text style={styles.inputLabel}>Nombre Público</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="eye-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputText}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Ej. Vaca 01"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Tag Number & Siniiga Tag Row */}
+      <View style={styles.inputRowContainer}>
+        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+          <Text style={styles.inputLabel}>Nº Arete</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="pricetag-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputText}
+              value={tagNumber}
+              onChangeText={setTagNumber}
+              placeholder="Ej. TAG-123"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        </View>
+
+        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+          <Text style={styles.inputLabel}>SINIIGA Tag</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="shield-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputText}
+              value={siniigaTag}
+              onChangeText={setSiniigaTag}
+              placeholder="Ej. SIN-456"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Birth Date Input */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Color (Opcional)</Text>
+        <Text style={styles.inputLabel}>Fecha de Nacimiento</Text>
         <View style={styles.inputWrapper}>
-          <Ionicons name="color-palette-outline" size={20} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
-          <TextInput
+          <Ionicons name="calendar-outline" size={20} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+          <DatePicker
             style={styles.inputText}
-            value={color}
-            onChangeText={setColor}
-            placeholder="Ej. Negro con blanco"
+            value={birthDate}
+            onChangeText={setBirthDate}
+            placeholder="AAAA-MM-DD (Ej. 2023-05-15)"
             placeholderTextColor="rgba(255,255,255,0.3)"
           />
         </View>
       </View>
 
-      {/* Row for Pierna1 and Pierna2 */}
+      {/* Sex Selector */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Sexo</Text>
+        <View style={styles.typeSelectorRow}>
+          {([
+            { key: 'female', label: 'Hembra' },
+            { key: 'male', label: 'Macho' },
+            { key: 'unknown', label: 'Desconocido' }
+          ] as const).map((opt) => (
+            <TouchableOpacity
+              key={opt.key}
+              style={[
+                styles.typeButton,
+                sex === opt.key && styles.typeButtonActive,
+              ]}
+              onPress={() => setSex(opt.key)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.typeButtonText,
+                sex === opt.key && styles.typeButtonTextActive
+              ]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Origin Selector */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Origen</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.originSelectorScroll}>
+          {([
+            { key: 'born', label: 'Nacido' },
+            { key: 'purchased', label: 'Comprado' },
+            { key: 'transferred', label: 'Transferido' },
+            { key: 'imported', label: 'Importado' },
+            { key: 'unknown', label: 'Desconocido' }
+          ] as const).map((opt) => (
+            <TouchableOpacity
+              key={opt.key}
+              style={[
+                styles.typeButton,
+                { width: 100, marginHorizontal: 4 },
+                origin === opt.key && styles.typeButtonActive,
+              ]}
+              onPress={() => setOrigin(opt.key)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.typeButtonText,
+                origin === opt.key && styles.typeButtonTextActive
+              ]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Ownership & Purpose & Purity Row */}
       <View style={styles.inputRowContainer}>
-        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-          <Text style={styles.inputLabel}>Pierna 1 (Opcional)</Text>
+        <View style={[styles.inputGroup, { flex: 1, marginRight: 6 }]}>
+          <Text style={styles.inputLabel}>Propiedad</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="sparkles-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
             <TextInput
               style={styles.inputText}
-              value={pierna1}
-              onChangeText={setPierna1}
-              placeholder="Ej. Hierro A"
+              value={ownershipType}
+              onChangeText={setOwnershipType}
+              placeholder="Ej. Propio"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
         </View>
 
-        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-          <Text style={styles.inputLabel}>Pierna 2 (Opcional)</Text>
+        <View style={[styles.inputGroup, { flex: 1, marginHorizontal: 6 }]}>
+          <Text style={styles.inputLabel}>Propósito</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="sparkles-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
             <TextInput
               style={styles.inputText}
-              value={pieran2}
-              onChangeText={setPieran2}
-              placeholder="Ej. Hierro B"
+              value={purpose}
+              onChangeText={setPurpose}
+              placeholder="Ej. Leche"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        </View>
+
+        <View style={[styles.inputGroup, { flex: 1, marginLeft: 6 }]}>
+          <Text style={styles.inputLabel}>Pureza</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.inputText}
+              value={purity}
+              onChangeText={setPurity}
+              placeholder="Ej. Cruzado"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
         </View>
       </View>
 
-      {/* Row for Serie1 and Serie2 */}
+      {/* Sire ID & Dam ID Row */}
       <View style={styles.inputRowContainer}>
         <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-          <Text style={styles.inputLabel}>Serie 1 (Opcional)</Text>
+          <Text style={styles.inputLabel}>ID Padre (Sire)</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="barcode-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <Ionicons name="male-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
             <TextInput
               style={styles.inputText}
-              value={serie1}
-              onChangeText={setSerie1}
-              placeholder="Ej. 12345"
+              value={sireId}
+              onChangeText={setSireId}
+              placeholder="UUID Padre"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
         </View>
 
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-          <Text style={styles.inputLabel}>Serie 2 (Opcional)</Text>
+          <Text style={styles.inputLabel}>ID Madre (Dam)</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="barcode-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
+            <Ionicons name="female-outline" size={18} color="rgba(255,255,255,0.4)" style={styles.inputIcon} />
             <TextInput
               style={styles.inputText}
-              value={serie2}
-              onChangeText={setSerie2}
-              placeholder="Ej. 67890"
+              value={damId}
+              onChangeText={setDamId}
+              placeholder="UUID Madre"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
+        </View>
+      </View>
+
+      {/* Notes Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Notas / Observaciones</Text>
+        <View style={[styles.inputWrapper, { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
+          <Ionicons name="document-text-outline" size={20} color="rgba(255,255,255,0.4)" style={[styles.inputIcon, { marginTop: 2 }]} />
+          <TextInput
+            style={[styles.inputText, { textAlignVertical: 'top' }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Ingrese cualquier observación sobre el animal..."
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            multiline={true}
+            numberOfLines={4}
+          />
         </View>
       </View>
 
@@ -299,118 +371,5 @@ export default function AnimalCreateFormComponent({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  inputGroup: {
-    marginBottom: 18,
-  },
-  inputLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  inputText: {
-    flex: 1,
-    color: '#ffffff',
-    fontSize: 15,
-    height: '100%',
-  },
-  typeSelectorRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 8,
-  },
-  typeButton: {
-    flex: 1,
-    height: 46,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 10,
-    marginHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  typeButtonActive: {
-    backgroundColor: 'rgba(217, 171, 85, 0.15)',
-    borderColor: '#d9ab55',
-  },
-  typeButtonText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  typeButtonTextActive: {
-    color: '#d9ab55',
-    fontWeight: 'bold',
-  },
-  inputRowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    paddingHorizontal: 24,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  submitButton: {
-    backgroundColor: '#d9ab55',
-    borderRadius: 12,
-    height: 50,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#111214',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
+  ...formStyleBase,
 });

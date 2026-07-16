@@ -70,20 +70,40 @@ export namespace Core {
 
   //sujeto a cambios, los tipos no son definitivos
 export interface Animal {
-  id: number; // uuid
-  nombre: string,
-  edad: number,
-  animalType: AnimalType
-  Color: string
-  Pierna1: string
-  Pieran2:String
-  Serie1: string
-  Serie2:String
-  Arete:String
-  fechaNacimiento: string
-  created_by: string; // uuid
-  created_at: string; // timestamptz
-  updated_at: string; // timestamptz
+  id: string | number;
+  item_type?: 'animal' | 'lot';
+  animal_id?: string | null;
+  lot_id?: string | null;
+  organization_id?: string;
+  production_unit_id?: string;
+  identifier?: string;
+  display_name?: string | null;
+  name?: string | null;
+  tag_number?: string | null;
+  siniiga_tag?: string | null;
+  birth_date?: string | null;
+  sex?: 'male' | 'female' | 'unknown' | string;
+  origin?: string;
+  ownership_type?: string | null;
+  purpose?: string | null;
+  purity?: string | null;
+  sire_id?: string | null;
+  dam_id?: string | null;
+  notes?: string | null;
+  status?: string;
+  nombre?: string;
+  edad?: number;
+  animalType?: AnimalType;
+  Color?: string;
+  Pierna1?: string;
+  Pieran2?: string;
+  Serie1?: string;
+  Serie2?: string;
+  Arete?: string;
+  fechaNacimiento?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
   export interface AnimalCreateInput {
@@ -115,5 +135,10 @@ export interface Animal {
     description: string;
     applied_date: string;
     idempotency_key: string; // Used to prevent duplicates on mobile retry
+  }
+
+  export interface OrgPermissionsResponse {
+    role: string;
+    permissions: string[];
   }
 }

@@ -31,6 +31,7 @@ export default function AuthView({ navigation }: any) {
       const { error } = await supabase.auth.signInWithPassword({
         phone: data.phone,
         password: data.password || '',
+        orgId: data.orgId,
       });
       if (error) {
         Alert.alert('Error', error.message);

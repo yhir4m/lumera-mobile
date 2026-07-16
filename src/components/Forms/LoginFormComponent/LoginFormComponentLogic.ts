@@ -10,6 +10,8 @@ import { SupportContactType, getSupportContactAlert } from '../../../utils/suppo
 import { getOtpNextPage, sanitizeOtpInput, validateLoginPassword, validateNewPasswordForm, validateOtpCode } from '../../../utils/validationUtils';
 import { useRancho } from '../../../context/RanchoContext';
 import { useLoader } from '../../../context/LoaderContext';
+import { apiClient } from '../../../lib/apiClient';
+import { supabase } from '../../../lib/supabase';
 
 // Page index mapping:
 // 0 = P1: Phone entry
@@ -20,7 +22,7 @@ import { useLoader } from '../../../context/LoaderContext';
 // 5 = P6: Help / Support
 // 6 = P7: Choose organization
 
-export type LoginPage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type LoginPage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export const PAGE_LABELS: Record<number, string> = {
   0: 'inicio de sesión',
@@ -30,6 +32,7 @@ export const PAGE_LABELS: Record<number, string> = {
   4: 'crear contraseña',
   5: 'ayuda',
   6: 'elegir organización',
+  7: 'registrar rancho',
 };
 
 export const OTP_TIMER_SECONDS = 30;
@@ -48,16 +51,8 @@ export async function performLoadUserOrganizations(
 ) {
   setAppLoading(true);
   try {
-    // REAL API CALL:
-    // const response = await coreService.getUserOrganizations();
-    // const orgList = response.data;
-
-    // MOCK RESPONSE:
-    const orgList: Core.Organization[] = [
-      { org_id: 'org_amanecer', org_name: 'Rancho El Amanecer', role: 'Administrador' },
-      { org_id: 'org_robles', org_name: 'Ganadera Los Robles', role: 'Supervisor' },
-      { org_id: 'org_isidro', org_name: 'Unidad San Isidro', role: 'Trabajador' }
-    ];
+    const response = await coreService.getUserOrganizations();
+    const orgList = response.data;
 
     setOrganizations(orgList);
     if (orgList.length > 0) {
@@ -143,7 +138,16 @@ export async function performP3Submit(
   setLoading(true);
 
   try {
-    await authService.passwordLogin(phone, password);
+    const response = await authService.passwordLogin(phone, password);
+    console.log(response,'pol')
+    const token = response.data.accessToken || (response.data as any).access_token;
+    if (token) {
+      apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
+      // Store real JWT so the mock supabase session uses it instead of a fake token
+      if (typeof (supabase.auth as any).setRealToken === 'function') {
+        (supabase.auth as any).setRealToken(token);
+      }
+    }
     setIsLoginFlow(true);
     transitionToPage(6);
   } catch (err: any) {
@@ -216,6 +220,21 @@ export async function performP5Submit(
   try {
     await authService.setPassword(phone, otpCode, newPassword);
 
+    // Auto-login to obtain the Bearer token for page 6 (Choose/Create Org)
+    try {
+      const loginRes = await authService.passwordLogin(phone, newPassword);
+      const token = loginRes.data.accessToken || (loginRes.data as any).access_token;
+      if (token) {
+        apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
+        // Store real JWT so the mock supabase session uses it instead of a fake token
+        if (typeof (supabase.auth as any).setRealToken === 'function') {
+          (supabase.auth as any).setRealToken(token);
+        }
+      }
+    } catch (e) {
+      console.warn('Auto-login failed after setPassword', e);
+    }
+
     const savedPassword = newPassword;
     const nextPage = 6;
 
@@ -253,23 +272,49 @@ export async function performOrgSubmit(
 ) {
   setLoading(true);
   try {
-    // REAL API CALL:
-    // const response = await coreService.selectOrganization(selectedOrg);
-    // const { access_token, active_org } = response.data;
+    const response = await coreService.selectOrganization(selectedOrg);
+    const { access_token, active_org } = response.data;
 
-    // MOCK RESPONSE:
-    const mockSelectResponse = {
-      access_token: 'mock-org-jwt-token-sprint2',
-      active_org: {
-        org_id: selectedOrg,
-        org_name: selectedOrg === 'org_amanecer' ? 'Rancho El Amanecer' : (selectedOrg === 'org_robles' ? 'Ganadera Los Robles' : 'Unidad San Isidro'),
-        role: selectedOrg === 'org_amanecer' ? 'Administrador' : (selectedOrg === 'org_robles' ? 'Supervisor' : 'Trabajador')
-      }
-    };
-
-    await onSubmit({ phone, password });
+    await onSubmit({ phone, password, orgId: selectedOrg });
   } catch (err: any) {
-    Alert.alert('Error', err.message || 'Error al seleccionar la organización');
+    const apiError = err.response?.data?.error;
+    const errorMsg = apiError?.message || err.message || 'Error al seleccionar la organización';
+    Alert.alert('Error', errorMsg);
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function performCreateOrg(
+  orgName: string,
+  setOrgNameError: (err: string) => void,
+  setLoading: (loading: boolean) => void,
+  setOrganizations: (orgs: Core.Organization[]) => void,
+  setSelectedOrg: (orgId: string) => void,
+  transitionToPage: (page: number) => void
+) {
+  if (!orgName.trim()) {
+    setOrgNameError('El nombre del rancho es obligatorio.');
+    return;
+  }
+  setOrgNameError('');
+  setLoading(true);
+  try {
+    const response = await coreService.createOrganization(orgName.trim());
+    const newOrg = response.data;
+
+    // Fetch updated organizations
+    const orgsRes = await coreService.getUserOrganizations();
+    setOrganizations(orgsRes.data);
+
+    // Select the new rancho automatically
+    setSelectedOrg(newOrg.org_id);
+    Alert.alert('Éxito', `El rancho "${newOrg.org_name}" ha sido registrado correctamente.`);
+    transitionToPage(6);
+  } catch (err: any) {
+    const apiError = err.response?.data?.error;
+    const errorMsg = apiError?.message || err.message || 'Error al registrar el rancho';
+    setOrgNameError(errorMsg);
   } finally {
     setLoading(false);
   }
@@ -386,6 +431,8 @@ export function useLoginFormLogic({ onSubmit }: UseLoginFormLogicParams) {
   const [otpError, setOtpError] = useState('');
   const [newPasswordError, setNewPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [orgName, setOrgName] = useState('');
+  const [orgNameError, setOrgNameError] = useState('');
 
   const otpInputRef = useRef<any>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -427,6 +474,11 @@ export function useLoginFormLogic({ onSubmit }: UseLoginFormLogicParams) {
       setPassword('');
       setPasswordError('');
       setShowPassword(false);
+    }
+
+    if (nextPage !== 7) {
+      setOrgName('');
+      setOrgNameError('');
     }
 
     if (nextPage !== 3 && nextPage !== 4) {
@@ -583,6 +635,21 @@ export function useLoginFormLogic({ onSubmit }: UseLoginFormLogicParams) {
     if (confirmPasswordError) setConfirmPasswordError('');
   };
 
+  const handleCreateOrgSubmit = () => {
+    performCreateOrg(
+      orgName,
+      setOrgNameError,
+      setLoading,
+      setOrganizations,
+      setSelectedOrg,
+      transitionToPage
+    );
+  };
+
+  const clearOrgNameError = () => {
+    if (orgNameError) setOrgNameError('');
+  };
+
   return {
     page,
     pageHistory,
@@ -636,5 +703,10 @@ export function useLoginFormLogic({ onSubmit }: UseLoginFormLogicParams) {
     clearOtpError,
     clearNewPasswordError,
     clearConfirmPasswordError,
+    orgName,
+    setOrgName,
+    orgNameError,
+    handleCreateOrgSubmit,
+    clearOrgNameError,
   };
 }

@@ -1,9 +1,18 @@
 import { StyleSheet, Platform } from 'react-native';
 
 export default StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Dark overlay for text contrast
+  },
   container: {
     flex: 1,
-    backgroundColor: '#111214',
+    backgroundColor: 'transparent',
   },
   layoutWrapper: {
     flex: 1,
@@ -17,9 +26,9 @@ export default StyleSheet.create({
   },
   sidebar: {
     width: 260,
-    backgroundColor: '#16171a',
+    backgroundColor: 'rgba(20, 26, 21, 0.85)',
     borderRightWidth: 1,
-    borderRightColor: '#202227',
+    borderRightColor: 'rgba(255, 255, 255, 0.1)',
     paddingVertical: 24,
     paddingHorizontal: 16,
     justifyContent: 'space-between',
@@ -122,7 +131,7 @@ export default StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    backgroundColor: '#111214',
+    backgroundColor: 'transparent',
     flexDirection: 'column',
   },
   navbar: {
@@ -132,8 +141,8 @@ export default StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#1d1f24',
-    backgroundColor: '#16171a',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(20, 26, 21, 0.6)',
   },
   navbarGreeting: {
     color: '#ffffff',
@@ -181,10 +190,10 @@ export default StyleSheet.create({
     paddingBottom: 80,
   },
   weatherBanner: {
-    backgroundColor: '#16171a',
+    backgroundColor: 'rgba(20, 26, 21, 0.72)',
     borderWidth: 1,
-    borderColor: '#202227',
-    borderRadius: 12,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -270,11 +279,11 @@ export default StyleSheet.create({
   statsCard: {
     flex: 1,
     minWidth: 150,
-    backgroundColor: '#16171a',
+    backgroundColor: 'rgba(20, 26, 21, 0.72)',
     borderWidth: 1,
-    borderColor: '#202227',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     borderLeftWidth: 4,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 16,
     marginRight: 8,
     marginBottom: 8,
@@ -304,10 +313,10 @@ export default StyleSheet.create({
     flex: 1,
   },
   contentColumn: {
-    backgroundColor: '#16171a',
+    backgroundColor: 'rgba(20, 26, 21, 0.72)',
     borderWidth: 1,
-    borderColor: '#202227',
-    borderRadius: 12,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
     padding: 20,
     marginBottom: 16,
   },
@@ -421,9 +430,9 @@ export default StyleSheet.create({
     left: 0,
     right: 0,
     height: 60,
-    backgroundColor: '#16171a',
+    backgroundColor: 'rgba(20, 26, 21, 0.95)',
     borderTopWidth: 1,
-    borderTopColor: '#202227',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -455,7 +464,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(0,0,0, 0.5)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 16,

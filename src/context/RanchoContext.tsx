@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Core } from '../interfaces/CoreInterfaces';
 import { coreService } from '../services/CoreServices/CoreService';
 
-export type LoginPage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type LoginPage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface RanchoContextType {
   selectedOrgId: string;
@@ -27,14 +27,14 @@ interface RanchoContextType {
   loadingProductionUnits: boolean;
   productionUnitsError: string;
   productionUnitsBlocked: boolean;
-  loadProductionUnits: (orgId: string) => Promise<void>;
+  loadProductionUnits: (orgId: string, force?: boolean) => Promise<void>;
 
   // Animal States
   animals: Core.Animal[];
   setAnimals: React.Dispatch<React.SetStateAction<Core.Animal[]>>;
   loadingAnimals: boolean;
   animalsError: string;
-  loadAnimals: (orgId: string, puId: string) => Promise<void>;
+  loadAnimals: (orgId: string, puId: string, force?: boolean) => Promise<void>;
 
   moveAnimal: (
     animal: Core.Animal,
@@ -107,9 +107,9 @@ export const RanchoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  const loadProductionUnits = async (orgId: string) => {
+  const loadProductionUnits = async (orgId: string, force?: boolean) => {
 
-    if (productionUnitsByOrg[orgId]) {
+    if (productionUnitsByOrg[orgId] && !force) {
       return;
     }
     setLoadingProductionUnits(true);
@@ -131,9 +131,9 @@ export const RanchoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const loadAnimals = async (orgId: string, puId: string) => {
+  const loadAnimals = async (orgId: string, puId: string, force?: boolean) => {
     const cacheKey = `${orgId}_${puId}`;
-    if (animalsByPU[cacheKey]) {
+    if (animalsByPU[cacheKey] && !force) {
       return;
     }
     setLoadingAnimals(true);
